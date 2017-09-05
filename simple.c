@@ -95,8 +95,7 @@ void simple_exit(void)
 module_init(simple_init);
 module_exit(simple_exit);
 
-/* Macros for inserting/removing items from a list*/
-
+// other
 MODULE_LICENSE("GPL");
 MODULE_DESCRIPTION("Simple Module");
 MODULE_AUTHOR("SGG, Fernando Cuevas");
