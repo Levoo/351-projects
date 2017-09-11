@@ -5,6 +5,7 @@
 #define BUFFER SIZE 25
 #define READ END 0
 #define WRITE END 1
+
 int main(void)
 {
   char write msg[BUFFER SIZE] = "Greetings";
