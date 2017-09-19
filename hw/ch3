@@ -1,0 +1,24 @@
+#----------Question 3.10--------------
+
+
+#----------Question 3.12--------------
+osc-vm@oscvm-VirtualBox:~/Documents/hw3$ ./q3
+waiting for child...
+		(child) exec'ing date...
+Mon Sep 18 22:15:19 PDT 2017
+...child complete
+osc-vm@oscvm-VirtualBox:~/Documents/hw3$ 
+
+Question Answer: There are a total of 3 processes, the parent the child and the data.
+
+#----------Question 3.14--------------
+
+#----------Question 3.17--------------
+
+#----------Question 3.19--------------
+
+#----------Question 3.23--------------
+
+#----------Question 3.25--------------
+
+#----------Question 3.27--------------
