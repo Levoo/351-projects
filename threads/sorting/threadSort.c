@@ -27,7 +27,6 @@ int sortedArray[MAX_SIZE];
 pthread_mutex_t lock;
 
 void displayArray(int args[], int start, int end);
-void genArray();
 void getStartEnd(int aSize, int* start, int* end);
 void *thread_SortA(int start_stop[]);
 void *thread_SortB(int start_stop[]);
