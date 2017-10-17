@@ -1,8 +1,4 @@
 /*
- * Author: Fernando Cuevas
- * Class: CPSC 351, TUE/THUR 1:00-2:15
- * Professor: Prof. W. McCarthy
- * Due: 10/19/2017
  * Purpose:
  * Notes:
  * */
