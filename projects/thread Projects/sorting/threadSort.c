@@ -1,8 +1,4 @@
 /*
- * Author: Fernando Cuevas
- * Class: CPSC 351, TUE/THUR 1:00-2:15
- * Professor: Prof. W. McCarthy
- * Due: 10/19/2017
  * Purpose: Use threads to sort an array of integers. Do this by spliting the array into two
  *          sub arrays sort those and then merge/sort the array in another thread.
  * Notes: Used bubble sort to sort the array of ints. Program  accounts for even/odd sized arrays, further exploration
