@@ -1,0 +1,66 @@
+/*
+ * Author: Fernando
+ * Class: CPSC 351*/
+
+#include <pthread.h>
+#include <stdio.h>
+#include <stdlib.h>
+
+#define THREADS 1
+
+int avg;
+int min;
+int max;
+int listSize;
+
+void *averageValue(void* params);
+void *minValue();
+void *maxValue();
+
+pthread_mutex_t lock;
+
+int main(int argv, int* args[]){
+    if(argv == 1){
+        printf("usage is ./<exe> <list of numbers>\ne.g ./a.out 1 3 2\n");
+        exit(EXIT_FAILURE);
+    }
+    int i;
+    int *nList = (int*) malloc((argv - 1)*sizeof(int));
+    for(i = 1; i < argv; i++){
+        nList[i - 1] = atoi(args[i]);
+        listSize++;
+    }
+    //
+    pthread_mutex_init(&lock, NULL);
+    pthread_t thread_ids[THREADS];
+
+    int index;
+    for (index = 0; index < THREADS; index++) {
+        pthread_create(&thread_ids[index], NULL, averageValue, (void*)nList);
+    }
+    for (index = 0; index < THREADS; index++) {
+        pthread_join(thread_ids[index], NULL);
+    }
+    printf("AVERAGE: %d\n", avg);
+   // printf("MINIMUM: %d\n", min); // 72
+   // printf("MAXIMUM: %d\n", max); // 95
+
+    printf("\n");
+}
+
+void *averageValue(void* params){
+    int* aVals = (int*) params;
+    int numSum = 0;
+    int i;
+    for(i = 0; i < listSize; i++){
+        numSum += aVals[i];
+    }
+    avg = numSum / (listSize);
+    pthread_exit(0);
+}
+
+void *maxValue(void* params){
+
+}
+
+void *
