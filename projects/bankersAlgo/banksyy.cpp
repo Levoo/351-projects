@@ -88,5 +88,5 @@ int release_resources(int customer_num, int request[]){
 void bank_customer(int customer_num){
 	// requestes and such will be made here 
 	std::cout << "Customer # " << customer_num
-	//says we should have a while loop but wo bu dong!
+	
 }
