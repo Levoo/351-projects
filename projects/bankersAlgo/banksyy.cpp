@@ -11,6 +11,7 @@ Status: WIP
 #include <iostream>
 #include <thread>
 #include <mutex>
+#include <fstream>
 #include <chrono>
 
 #define NUM_CUSTOMERS 5
@@ -39,7 +40,7 @@ std::mutex transaction_lock;
 // has been allocated  similar return to above
 // these fucntions will be accessed through the bank_customer function
 int request_resources(int customer_num, int request[]);
-int release_resource(int customer_num, int release[]);
+int release_resources(int customer_num, int release[]);
 
 
 void bank_customer(int customer_num);
@@ -52,13 +53,9 @@ void bank_customer(int customer_num);
 // allocation table will be given to us as well.
 // need table will be [ # of customer}[max - allocated]
 // sleep thread used to make it seem that the thread is doing work
-void create_AvaliableTable();
-void show_AvaliableTable();
-void create_MaxTable();
-void create_AllocationTable();
-void create_NeedTable();
+void create_Tables(char* given[]);
 void show_Table(); // for matric array
-void show_Vector(); // for 1d array
+void show_Vector(int vect[]); // for 1d array
 void show_All();
 void sleep_thread();
 
@@ -68,6 +65,7 @@ int main(int argc, char* argv[]){
     // create the tables based on avalable and other such things
     // possibly make it read a file for easy testing, lookm at java code for more
     // refined help, currently seems good but there might be at least 3 funcs missing.
+    create_Tables(argv);
 
     std::cout << "Customers Are entering the bank\n";
 
@@ -85,34 +83,73 @@ int main(int argc, char* argv[]){
     std::cout << "Customers are leaving\n";
     return 0;
 }
+//create and populate all the tables for the bankers algorithm
+void create_Tables(char* given[]){
+    for(int i = 0; i < NUM_RESOURCES; i++){
+        std::cout << given[i] << std::endl; // given[1..3] has the numbers given of 0 has text so start at i+1
+        available[i] = atoi(given[i+1]); // set the avaliable to the one given by the user
+    }
+    std::cout << available[0] << " " << available[1] << " " << available[2] << std::endl;
+    std::fstream readFile;
+    readFile.open("/home/dauser/CLionProjects/bank_algo/infile.txt");
+
+    if(!readFile) {std::cout << "error opening file!"; exit(1);}
+    std::string temp;
+    while (readFile >> temp){ //raw reading figure out how to parse the data
+        std::cout << temp << " ";
+    }
+}
+
+
+//----------------------------------------------------------------------------------------
 
 int request_resources(int customer_num, int request[]){
     // do something
+    std::cout << request << std::endl;
     std::cout << "Customer # " << customer_num << " made a resource request.\n";
     return 0;
 }
 
-int release_resources(int customer_num, int request[]){
+int release_resources(int customer_num, int release[]){
     // do something
     std::cout << "Customer # " << customer_num << " made a release request.\n";
     return 0;
-}
-
-void bank_customer(int customer_num){
-    // requestes and such will be made here
-    bool running = true;
-    int customer_request[NUM_RESOURCES];
-
-    while(running) {
-        sleep_thread();
-        //make a resource request make it random use java file.
-        for(int req = 0; req < NUM_RESOURCES; req++){ customer_request[req] = maximum[customer_num][req]+1;}
-    }
-
-
 }
 
 void sleep_thread(){
     std::chrono::milliseconds sleepDuration(5000);
     std::this_thread::sleep_for(sleepDuration);
 }
+
+void show_Vector(int vect[]){
+    for (int i = 0; i < NUM_RESOURCES; i++){
+        std::cout << vect[i] << " ";
+    }
+    std::cout << std::endl;
+}
+//----------------------------------------------------------------------------------------
+
+void bank_customer(int customer_num){
+    // requestes and such will be made here
+    int running = 1;
+    int customer_request[NUM_RESOURCES];
+
+    while(running) {
+        sleep_thread();
+        transaction_lock.lock();
+        //make a resource request make it random use java file.
+        for(int req = 0; req < NUM_RESOURCES; req++){ customer_request[req] = maximum[customer_num][req]+1;}
+        show_Vector(customer_request);
+        // if request was succesful exit then stop the loop
+        // if not keep it as 1
+        running = request_resources(customer_num, nullptr);
+        transaction_lock.unlock();
+    }
+    // release resources back to avaliable
+    transaction_lock.lock();
+    release_resources(customer_num, nullptr);
+    transaction_lock.unlock();
+
+    //
+}
+
