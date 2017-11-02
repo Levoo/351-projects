@@ -1,5 +1,6 @@
 /*-------------------------------------------
 Author: Fernando
+      : Matt
 Class:
 Professor:
 Project: Multi-threaded Bankers Algorithm
@@ -8,16 +9,12 @@ File name: banksy.cpp
 Status: WIP
  todo: -release functions
        -bankers algo
-       -array of bools to keep track of done processes
-       -handel unsafe state -> should exit whole program and print current state and which process was requesting and what
-       it was requesting
 ---------------------------------------------*/
 
 #include <iostream>
 #include <thread>
 #include <mutex>
 #include <fstream>
-#include <chrono>
 
 #define NUM_CUSTOMERS 5
 #define NUM_RESOURCES 3
@@ -35,7 +32,7 @@ int maximum[NUM_CUSTOMERS][NUM_RESOURCES];
 int allocation[NUM_CUSTOMERS][NUM_RESOURCES];
 int need[NUM_CUSTOMERS][NUM_RESOURCES];
 
-std::mutex transaction_lock;
+std::mutex transaction_lock; //lock
 
 /* request / release functions used by threads (customers)  */
 
@@ -152,27 +149,28 @@ int request_resources(int customer_num, int request[]){
     // avliable = avaliable - request
     // allocation  = allocation + request
     // need = need - request
-    std::cout << "CUSTOMER  # " << customer_num  << "is REQUESTING resources."<< std::endl;
+    std::cout << "CUSTOMER  # " << customer_num  << " is REQUESTING resources."<< std::endl;
     for (int i = 0; i < NUM_RESOURCES; i++){
         if(request[i] <= need[customer_num][i]){
             if(request[i] <= available[i]){
-                std::cout <<  "Resource request of " << request[i] << "is valid request\n";
+                std::cout <<  "\trequest of " << request[i] << " is valid request\n";
             } else{
-                std::cout << "REQUEST DENIED: ";
+                std::cout << "\tREQUEST DENIED: ";
                 show_Vector(request);
                 return 1;
             }
         } else{
-            std::cout << "REQUEST DENIED: ";
+            std::cout << "\tREQUEST DENIED: ";
             show_Vector(request);
             return 1;
         }
     }
     std::cout << "Customer # " << customer_num << " made a VALID resource request.\n";
-    std::cout << "CHecking to make sure request leaves machine is safe state! Take a look at the OLD STATE while you wait!\n";
+    std::cout << "Checking to make sure request leaves machine is safe state! Take a look at the OLD STATE while you wait!\n";
     show_State();
-    if(inSafeState(customer_num, request) == 0){
+    if(inSafeState(customer_num, request)){ //in safe state returns true if safe else it returns false: not safe
         std::cout << "NEW STATE - all is SAFE\n";
+
         show_State();
     }else{
         std::cout << "WARNING: request leaves machine in unsafe state, cancelling request!!\n";
@@ -185,19 +183,75 @@ int request_resources(int customer_num, int request[]){
 bool inSafeState(int customer_num, int request[]){
     // bankers algo to check if in safe state...
 
+    for(int i = 0; i < NUM_RESOURCES; i++){ //pretend to give resources
+        available[i] -= request[i];
+        allocation[NUM_RESOURCES][i] += request[i];
+        need[NUM_RESOURCES][i] -= request[i];
+    }
+
+    int work[NUM_RESOURCES]; //step 1
+    bool finish[NUM_CUSTOMERS];
+    for(int set = 0; set < NUM_CUSTOMERS; set++){finish[set] = false;} //set finish all to false
+    for(int set = 0; set < NUM_RESOURCES; set++){work[set] = available[set];} // set work == avaliable
+
+    // pretent to give process the resource then check if in safe state
+    // if is in safe state allow the request and keep new values, else revert values back and let process try again.
+
+    //work = work + allocation
+    for(int i = 0; i < NUM_CUSTOMERS; i++){ // step 2
+        if(finish[i] ==  false) {
+            int j;
+            for (j = 0; j < NUM_RESOURCES; j++) {
+                if (need[i][j] > work[j]) {  //step 2
+                    break;
+                }
+            }
+
+            if(j == NUM_RESOURCES){
+                for(int h = 0; h < NUM_RESOURCES; h++){
+                    work[h] += allocation[i][h];
+                }
+                finish[i] = true;
+            }
+        }
+    }
+
+    for(int i = 0; i < NUM_CUSTOMERS; i++){
+        if(finish[i] == false){
+            std::cout << "system is in unsafe state.\n";
+            for(int i = 0; i < NUM_RESOURCES; i++){ //take pretend back 
+                available[i] += request[i];
+                allocation[NUM_RESOURCES][i] -= request[i];
+                need[NUM_RESOURCES][i] += request[i];
+            }
+            return false;
+        }
+    }
+
+    for(int i = 0; i < NUM_RESOURCES; i++){ //take pretend back
+        available[i] += request[i];
+        allocation[NUM_RESOURCES][i] -= request[i];
+        need[NUM_RESOURCES][i] += request[i];
+    }
     return true;
 }
 
 int release_resources(int customer_num, int release[]){
-    // do something
-    //std::lock_guard<std::mutex> guard(transaction_lock);
     // release all of the allocated resources back to avaliable so avaliable += allocated
     std::cout << "Customer # " << customer_num << " made a RELEASE REQUEST.\n";
+
+    for(int i = 0; i < NUM_RESOURCES; i++){
+        available[i] += allocation[customer_num][i];
+        //allocation[customer_num][i] -= release[i];
+    }
+
+    show_State();
+
     return 0;
 }
 
 void sleep_thread(){
-    std::chrono::milliseconds sleepDuration(5000);
+    std::chrono::milliseconds sleepDuration(2000);
     std::this_thread::sleep_for(sleepDuration);
 }
 
@@ -258,28 +312,18 @@ void bank_customer(int customer_num){
 
     while(running) {
         sleep_thread();
-        //transaction_lock.lock();
-        //make a resource request make it random use java file.
         transaction_lock.lock();
-        //show_State(); //put an assert to make sure we get no errors in random generator
         for(int req = 0; req < NUM_RESOURCES; req++){ customer_request[req] = rand() % (maximum[customer_num][req]+1);}
-        //show_Vector(customer_request);
         transaction_lock.unlock();
-        //show_State();
-        // if request was succesful exit then stop the loop
-        // if not keep it as 1
+
         transaction_lock.lock();
-        //show_State();
         if(request_resources(customer_num, customer_request) == 0){
             sleep_thread(); //make it look likes its using the resources
-            show_State();
+            //show_State();
             release_resources(customer_num, customer_request); //implement
             running = 0;
-            // have array of bools and set this process to done (true)
-            // possiby have statment saying thread # n requested this and show new state after release?
         }
+
         transaction_lock.unlock();
-        // release_resources(customer_num, nullptr);
     }
-    // release resources back to avaliable
 }
