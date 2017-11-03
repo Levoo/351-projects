@@ -7,6 +7,7 @@ Project: Multi-threaded Bankers Algorithm
 Due: 11/3/2017
 File name: banksy.cpp
 Status: Tested with infile.txt, need to test more with others...
+NOTE: MAKE SURE TO CHANGE FILE PATH IN LINE 98
 ---------------------------------------------*/
 
 #include <iostream>
