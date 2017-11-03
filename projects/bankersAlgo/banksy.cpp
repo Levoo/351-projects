@@ -1,24 +1,22 @@
 /*-------------------------------------------
 Author: Fernando
-Class:
-Professor:
+      : Matt
+Class: CPSC 351
+Professor: William McCarthy
 Project: Multi-threaded Bankers Algorithm
-Due: 11/2/2017
+Due: 11/3/2017
 File name: banksy.cpp
-Status: WIP
- todo:
-       -bankers algo
+Status: Tested with infile.txt, need to test more with others...
 ---------------------------------------------*/
 
 #include <iostream>
 #include <thread>
 #include <mutex>
 #include <fstream>
-#include <assert.h>
 
 #define NUM_CUSTOMERS 5
 #define NUM_RESOURCES 3
-// http://www.cplusplus.com/reference/mutex/mutex/ see this for mutex lock usage.
+
 
 /* Global Vars for Banker */
 
@@ -108,7 +106,7 @@ void create_Tables(char* given[]){
     }
     // allocation and max table
     int allocLoc[5] = {0, 6, 12, 18, 24};  // too cheesy figure out how to do with loops
-    int maxLoc[5]   = {3, 4, 15, 21, 27};
+    int maxLoc[5]   = {3, 9, 15, 21, 27};
     for(int customer = 0; customer < NUM_CUSTOMERS; customer++){ //move raw data into arrays
         for(int data = 0; data < 3; data++){
             allocation[customer][data] = raw_data[allocLoc[customer] + data];
@@ -169,14 +167,14 @@ int request_resources(int customer_num, int request[]){
     std::cout << "Checking to make sure request leaves machine is safe state! Take a look at the OLD STATE while you wait!\n";
     show_State();
     if(inSafeState(customer_num, request)){ //in safe state returns true if safe else it returns false: not safe
-        std::cout << "NEW STATE - all is SAFE\n";
+        std::cout << "\tNEW STATE - all is SAFE\n";
         show_State();
     }else{
         std::cout << "WARNING: request leaves machine in unsafe state, cancelling request!!\n";
         for(int i = 0; i < NUM_RESOURCES; i++){ //get back resources
             available[i] += request[i];
             allocation[customer_num][i] -= request[i];
-            need[customer_num][i] -= request[i];
+            need[customer_num][i] += request[i];
         }
         return 1; //looki here
     }
@@ -191,7 +189,7 @@ bool inSafeState(int customer_num, int request[]){
     for(int i = 0; i < NUM_RESOURCES; i++){ //pretend to give resources
         available[i] -= request[i];
         allocation[customer_num][i] += request[i];
-        //need[customer_num][i] -= request[i];
+        need[customer_num][i] -= request[i];
     }
 
     int work[NUM_RESOURCES]; //step 1
@@ -199,26 +197,36 @@ bool inSafeState(int customer_num, int request[]){
     for(int set = 0; set < NUM_CUSTOMERS; set++){finish[set] = false;} //set finish all to false
     for(int set = 0; set < NUM_RESOURCES; set++){
         work[set] = available[set];
-        std::cout << work[set] << " ";
+        //std::cout << work[set] << " ";
     } // set work == avaliable
 
-
-    for(int i = 0; i < NUM_CUSTOMERS; i++){
-        if (finish[i] == false) {
-            for(int j = 0; j < NUM_RESOURCES; j++) {
-                if (need[i][j] > work[j]) {
-                    std::cout << "UNSAFE\n";
-                    return false;
+ // the banker
+    for(int i = 0; i < NUM_CUSTOMERS; i++){ // go though procees m * n^2 times :: NUM_RESOURCES x NUM_CUSTOMERS^2
+        for(int j = 0; j < NUM_CUSTOMERS; j++){ // if after that still find a process that is false then unsafe, see last for loop
+            if(!finish[j]){  // if find an unfinished process
+                bool canFinish = true;
+                for(int k = 0; k < NUM_RESOURCES; k++){
+                    if(need[j][k] > work[k]){  // check if need <= work if greater then set to false 
+                        canFinish = false; // if we find one instance of 
+                    }
+                }
+                if(canFinish){
+                    finish[j] = true;
+                    for(int x = 0; x < NUM_RESOURCES; x++){
+                        work[x] += allocation[j][x];
+                    }
                 }
             }
-            for(int j = 0; j < NUM_RESOURCES; j++) {
-                work[j] += allocation[i][j];
-                finish[i] = true;
-            }
-
         }
     }
 
+    for(int i = 0; i < NUM_CUSTOMERS; i++){  // if all true safe, else not safe
+        if (!finish[i]){
+            std::cout << "unsafe" << "\n";
+            return false;
+        }
+    }
+    //safe
     return true;
 
 }
@@ -229,10 +237,12 @@ int release_resources(int customer_num, int release[]){
 
     for(int i = 0; i < NUM_RESOURCES; i++){
         available[i] += allocation[customer_num][i];
+        allocation[customer_num][i] -= allocation[customer_num][i];
         //allocation[customer_num][i] -= release[i];
     }
-
+    std::cout << "\tState after resrouce request\n";
     show_State();
+    std::cout << "\n" << std::endl;
 
     return 0;
 }
@@ -264,7 +274,7 @@ void show_State(){
     std::cout << "\t\t\tCurrent State\n";
     std::cout << "Customer    | Allocated  | Max       | Need    | Available ";
     for(int customer = 0; customer < NUM_CUSTOMERS; customer++){ //move raw data into arrays
-        std::cout << "\nC " << customer+1 << "\t\t    | ";
+        std::cout << "\nC " << customer << "\t\t    | ";
         for(int data = 0; data < 3; data++){
             std::cout << allocation[customer][data] <<  " ";
         }
