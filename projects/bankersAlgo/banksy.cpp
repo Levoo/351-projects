@@ -1,6 +1,6 @@
 /*-------------------------------------------
-Author: Fernando
-      : Matt
+Authors: Fernando 
+       : Mattew 
 Class: CPSC 351
 Professor: William McCarthy
 Project: Multi-threaded Bankers Algorithm
@@ -8,6 +8,9 @@ Due: 11/3/2017
 File name: banksy.cpp
 Status: Tested with infile.txt, need to test more with others...
 NOTE: MAKE SURE TO CHANGE FILE PATH IN LINE 98
+      compiled/ran with:
+            g++ -std=c++11 banksy.cpp -pthread -o wells_fargo
+		./wells_fargo 10 5 7
 ---------------------------------------------*/
 
 #include <iostream>
@@ -63,10 +66,12 @@ void sleep_thread();
 
 
 int main(int argc, char* argv[]){
+    if(argc != 4){
+      std::cout << "Insuffecent arguments passed\n\tUsage: ./a.out <number> <number> <number>\n";
+      return -1;
+    }
 
-    // create the tables based on avalable and other such things
-    // possibly make it read a file for easy testing, lookm at java code for more
-    // refined help, currently seems good but there might be at least 3 funcs missing.
+    // for some reason create tables was acting funny when threads were running, putting here just in case
     transaction_lock.lock();
     create_Tables(argv);
     transaction_lock.unlock();
@@ -93,7 +98,9 @@ void create_Tables(char* given[]){
     for(int i = 0; i < NUM_RESOURCES; i++){
         //std::cout << given[i] << std::endl; // given[1..3] has the numbers given of 0 has text so start at i+1
         available[i] = atoi(given[i+1]); // set the avaliable to the one given by the user
+      //  std::cout << atoi(given[i+1]) << " ";
     }
+
     std::fstream readFile;
     readFile.open("/home/osc-vm/CLionProjects/banker_algo/infile.txt"); //change for other sys
 
@@ -207,8 +214,8 @@ bool inSafeState(int customer_num, int request[]){
             if(!finish[j]){  // if find an unfinished process
                 bool canFinish = true;
                 for(int k = 0; k < NUM_RESOURCES; k++){
-                    if(need[j][k] > work[k]){  // check if need <= work if greater then set to false 
-                        canFinish = false; // if we find one instance of 
+                    if(need[j][k] > work[k]){  // check if need <= work if greater then set to false
+                        canFinish = false; // if we find one instance of
                     }
                 }
                 if(canFinish){
