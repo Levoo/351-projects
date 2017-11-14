@@ -1,4 +1,4 @@
- /* * * * * * * * * * * * * * * * * * * * * * * * * *
+/* * * * * * * * * * * * * * * * * * * * * * * * * *
  * Project: Dining Philosophers Problem
  *
  * Authors: Fernando C
@@ -50,11 +50,12 @@ int main() {
     if((sem_init(&amt, 0, 5)) == -1){
         fprintf(stderr, "sem_open failed\n");
     }
-	/*Table to display the output*/
-   printf("=========================================================================");
-   printf("|                    ====== PHILOSOPHERS ======                         |");
-   printf("=========================================================================");
-   printf("   Phil_0   |     Phil_1   |     Phil_2   |     Phil_3   |    Phil_4    |");
+    /*Table to display the output*/
+    printf("=========================================================================\n");
+    printf("|                    ====== PHILOSOPHERS ======                         |\n");
+    printf("=========================================================================\n");
+    printf("   Phil_0   |     Phil_1   |     Phil_2   |     Phil_3   |    Phil_4    |\n");
+    check_on_table(0);
 
     int i;
     int check;
@@ -74,8 +75,9 @@ int main() {
         }
     }
 
-    printf("\nAll Philosphers are FULL:\n");
-    check_on_table();
+    check_on_table(0); /* final check*/
+    printf("\n...DONE.\n");
+
 
     sem_close(&amt);
     sem_unlink(semaphore_name);
@@ -97,7 +99,7 @@ void* dining_table(void* param){
     while(bitesTake != FULL_STOMACH){
 
         /*THINKNING*/
-        sleep(1);
+        sleep(2);
         /*REQUEST*/
         if(phil_state[phil_num] == 'T') {
             phil_state[phil_num] = 'H';
@@ -106,15 +108,15 @@ void* dining_table(void* param){
             pthread_mutex_unlock(&canEat);
         }
 
-         /* eating */
+        /* eating */
         /*LET GO*/
         if(phil_state[phil_num] == 'E') {
-			check_on_table(bitesTake);
             sleep(2);
             pthread_mutex_lock(&canEat);
+            check_on_table(bitesTake);
             waiter(phil_num, PUTDOWN);
-            pthread_mutex_unlock(&canEat);
             bitesTake++;
+            pthread_mutex_unlock(&canEat);
         }
 
         /*In the event that a phil is hungry he keeps checking if he can get the sticks */
@@ -125,57 +127,48 @@ void* dining_table(void* param){
             pthread_mutex_unlock(&canEat);
         }
     }
-    phil_state[phil_num] = 'F';
+    phil_state[phil_num] = 'T';
 }
 
 void waiter(int phil_num, int request){
     if(request == PICKUP){
 
         /*Try to pick up chopsticks, else go back to being hungry*/
-		/*first check to the left and right */
+        /*first check to the left and right */
+        /*then check one more to the left and one more to the right to make sure*/
         if(phil_state[phil_num] == 'H' && phil_state[(phil_num+4) % 5] != 'E' && phil_state[(phil_num + 1) % 5] != 'E'){
             if(phil_state[((phil_num+4) % 5) - 2] != 'E' && phil_state[(phil_num + 2) % 5] != 'E') {
-               // sem_wait(&amt); /*  aquire two chop sticks then update and eat*/
-                //sem_wait(&amt); /* if cannot aquire two will wait until released*/
-				/*!! possible move this out of here. or use a try wait 
-				     if we can aquire then we set to eating else we stay hungary
-					 essentailly making the thread go into a soin lock, no?
-					 */
-               // printf("\nPHIL # %d \tGUNNA GET SOME GRUB !!\n", phil_num);
-			   // try to get two chopsticks else we stay hungry until we can get two chopsticks
-			   if(sem_trywait(&amt) == 0){
-				if(sem_trywait(&amt) == 0){
-					phil_state[phil_num] = 'E';
-				}
-			   }
+                 sem_wait(&amt); /*  aquire two chop sticks then update and eat*/
+                 sem_wait(&amt); /* if cannot aquire two will wait until released*/
+                // try to get two chopsticks else we stay hungry until we can get two chopsticks
+//                if(sem_trywait(&amt) == 0){
+//                    if(sem_trywait(&amt) == 0){
+//                        phil_state[phil_num] = 'E';
+//                    }
+//                }
                 phil_state[phil_num] = 'E';
-                //check_on_table();
             }
         }
     }else if(request == PUTDOWN){
-        /* Let go of the chopsticks*/
-        //printf("\nPHIL # %d PUTTING DOWN\n", phil_num);
+
         phil_state[phil_num] = 'T';
-       /* int val;
-        sem_getvalue(&amt, &val);
-        printf("\nSEM:: %d", &val);*/
         sem_post(&amt); /* let go of chopsticks*/
         sem_post(&amt);
-        //check_on_table();
     }
 }
 
 void check_on_table(int bites){
-    printf("Waiter came to check on the table:\n");
     int i;
-	printf("-----------------------------------------------");
     for(i = 0; i < NUM_PHILO; i++){
-		if     (phil_state[i] == 'T')
-			printf("   thinking   |");
-		else if(phil_state[i] == 'H')
-			printf("   *hungry*   |");
-		else if(phil_state[i] == 'E')
-			printf("   EATING(%d) |", bites);
+        if     (phil_state[i] == 'T')
+            printf("   thinking   |");
+
+        else if(phil_state[i] == 'H')
+            printf("   *hungry*   |");
+
+        else if(phil_state[i] == 'E')
+            printf("   EATING(%d) |", bites+1);
+       // printf("%c     |", phil_state[i]);
     }
-    printf("_____");
+    printf("\n---------------------------------------------------------------------------\n");
 }
