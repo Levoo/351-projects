@@ -111,12 +111,16 @@ void* dining_table(void* param){
         /* eating */
         /*LET GO*/
         if(phil_state[phil_num] == 'E') {
+            sem_wait(&amt); /*  aquire two chop sticks then update and eat*/
+            sem_wait(&amt); /* if cannot aquire two will wait until released*/
             sleep(2);
             pthread_mutex_lock(&canEat);
             check_on_table(bitesTake);
             waiter(phil_num, PUTDOWN);
             bitesTake++;
             pthread_mutex_unlock(&canEat);
+            sem_post(&amt); /* let go of chopsticks*/
+            sem_post(&amt);
         }
 
         /*In the event that a phil is hungry he keeps checking if he can get the sticks */
@@ -132,28 +136,14 @@ void* dining_table(void* param){
 
 void waiter(int phil_num, int request){
     if(request == PICKUP){
-
         /*Try to pick up chopsticks, else go back to being hungry*/
         /*first check to the left and right */
         /*then check one more to the left and one more to the right to make sure*/
         if(phil_state[phil_num] == 'H' && phil_state[(phil_num+4) % 5] != 'E' && phil_state[(phil_num + 1) % 5] != 'E'){
-            if(phil_state[((phil_num+4) % 5) - 2] != 'E' && phil_state[(phil_num + 2) % 5] != 'E') {
-                 sem_wait(&amt); /*  aquire two chop sticks then update and eat*/
-                 sem_wait(&amt); /* if cannot aquire two will wait until released*/
-                // try to get two chopsticks else we stay hungry until we can get two chopsticks
-//                if(sem_trywait(&amt) == 0){
-//                    if(sem_trywait(&amt) == 0){
-//                        phil_state[phil_num] = 'E';
-//                    }
-//                }
                 phil_state[phil_num] = 'E';
-            }
         }
     }else if(request == PUTDOWN){
-
         phil_state[phil_num] = 'T';
-        sem_post(&amt); /* let go of chopsticks*/
-        sem_post(&amt);
     }
 }
 
@@ -168,7 +158,7 @@ void check_on_table(int bites){
 
         else if(phil_state[i] == 'E')
             printf("   EATING(%d) |", bites+1);
-       // printf("%c     |", phil_state[i]);
+        // printf("%c     |", phil_state[i]);
     }
     printf("\n---------------------------------------------------------------------------\n");
 }
