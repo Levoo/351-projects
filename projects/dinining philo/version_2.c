@@ -78,19 +78,22 @@ int main() {
     check_on_table(0); /* final check*/
     printf("\n...DONE.\n");
 
-
+    /*close and unlink the sem*/
     sem_close(&amt);
     sem_unlink(semaphore_name);
 
     return 0;
 }
-
+/*
+ * The function that the threads run, the threads will continually think, get hungry, eat and then go back to thinking
+ * keeps going until full(3 while loop runs)
+ * */
 void* dining_table(void* param){
     int phil_num = (int)param; // atoi keeps going if not successful, look for alt conversion if you can!
     int bitesTake = 0;
 
     /*
-     * while eaten is less than 10 (means while the guy has not eaten more than 10 times)
+     * while eaten is less than 3 (means while the guy has not eaten more than 10 times)
      *      think for a while (make the guy wait a random amount of time maybe vary between 1-5 seconds before they request)
      *      pickup(chopstick[i], chopstick[i+1 mod 5]) (the mod 5 takes care if i is 4 since the table is circular then 4+1%5 == 0)
      *      eat; (where eat means he will increment his local var of bites taken and eat for a while then let go)
@@ -99,8 +102,9 @@ void* dining_table(void* param){
     while(bitesTake != FULL_STOMACH){
 
         /*THINKNING*/
-        sleep(2);
-        /*REQUEST*/
+        sleep(bitesTake+1);
+        /*REQUEST
+         * if thinking then get hungry and try to eat*/
         if(phil_state[phil_num] == 'T') {
             phil_state[phil_num] = 'H';
             pthread_mutex_lock(&canEat);
@@ -109,15 +113,17 @@ void* dining_table(void* param){
         }
 
         /* eating */
-        /*LET GO*/
+        /*LET GO
+         * if above pick up was succesful, then get the chopsticks
+         * if you cannot get it wait until you can */
         if(phil_state[phil_num] == 'E') {
             sem_wait(&amt); /*  aquire two chop sticks then update and eat*/
             sem_wait(&amt); /* if cannot aquire two will wait until released*/
             sleep(2);
+            bitesTake++;   /* */
             pthread_mutex_lock(&canEat);
             check_on_table(bitesTake);
             waiter(phil_num, PUTDOWN);
-            bitesTake++;
             pthread_mutex_unlock(&canEat);
             sem_post(&amt); /* let go of chopsticks*/
             sem_post(&amt);
@@ -157,7 +163,7 @@ void check_on_table(int bites){
             printf("   *hungry*   |");
 
         else if(phil_state[i] == 'E')
-            printf("   EATING(%d) |", bites+1);
+            printf("   EATING(%d) |", bites);
         // printf("%c     |", phil_state[i]);
     }
     printf("\n---------------------------------------------------------------------------\n");
